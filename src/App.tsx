@@ -36,6 +36,7 @@ export default function App() {
   const [aiInputImage, setAiInputImage] = useState<string | null>(null);
   
   // Keyword Rank AI parsing
+  const [myStoreName, setMyStoreName] = useState(() => localStorage.getItem("my_store_name") || "ES리빙");
   const [activeAiKeywordIndex, setActiveAiKeywordIndex] = useState<number | null>(null);
   const [isKeywordAiParsing, setIsKeywordAiParsing] = useState<boolean>(false);
 
@@ -55,9 +56,14 @@ export default function App() {
 
       const prompt = `You are an expert e-commerce rank auditor. 
 Analyze the provided raw search results text from a Korean e-commerce site (pasted by the user).
-Your task is to find all occurrences of products sold by the user's shop (e.g. "ES리빙") OR matching the product name "${queryContext}".
-Count the items from top to bottom (ignoring irrelevant UI text, focus on actual product blocks).
-Return a JSON object containing the numerical positions (ranks) where these products appear.
+The user wants to find the exact ranking of THEIR OWN specific products.
+The user's store name (seller name) is "${myStoreName}".
+
+CRITICAL INSTRUCTION: You MUST ONLY look for products where the seller/shop name is EXACTLY "${myStoreName}".
+DO NOT match products just because they have a similar product name. Ignore all products sold by other competitors.
+
+Count all the product items from top to bottom.
+Return a JSON object containing the numerical positions (ranks) where "${myStoreName}"'s products appear.
 If multiple are found, return them as a comma-separated string (e.g. "3, 12"). If none found, return "-".
 
 Text to analyze:
@@ -935,9 +941,24 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                     </div>
                     <h3 className="font-bold text-slate-800 text-base">일별 키워드 순위 추적 및 관리</h3>
                   </div>
-                  <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-md font-bold">
-                    선택된 품목: <span className="text-slate-800">{selectedProduct.name}</span>
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center bg-emerald-50 border border-emerald-200 rounded-md px-2 py-1.5 gap-1.5 shadow-sm" title="AI가 이 스토어명의 상품만 찾습니다.">
+                      <span className="text-xs font-bold text-emerald-700">🛒 내 스토어명:</span>
+                      <input 
+                        type="text"
+                        value={myStoreName}
+                        onChange={(e) => {
+                          setMyStoreName(e.target.value);
+                          localStorage.setItem("my_store_name", e.target.value);
+                        }}
+                        className="w-24 text-xs font-bold text-slate-800 bg-white border border-emerald-200 rounded px-1.5 py-0.5 outline-none focus:border-emerald-500"
+                        placeholder="예: ES리빙"
+                      />
+                    </div>
+                    <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-md font-bold">
+                      선택된 품목: <span className="text-slate-800">{selectedProduct.name}</span>
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-6">
