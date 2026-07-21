@@ -33,6 +33,21 @@ export default function App() {
   const [aiParseError, setAiParseError] = useState<string | null>(null);
   const [localApiKey, setLocalApiKey] = useState(() => localStorage.getItem("gemini_api_key") || "");
   const [showApiKeyInput, setShowApiKeyInput] = useState(!import.meta.env.VITE_GEMINI_API_KEY && !localStorage.getItem("gemini_api_key"));
+  const [aiInputImage, setAiInputImage] = useState<string | null>(null);
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+      const file = e.clipboardData.files[0];
+      if (file.type.startsWith('image/')) {
+        e.preventDefault();
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setAiInputImage(event.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
   
   // Manual / AI Edit form states (for selected product & selected date)
   const [editNaverPrice, setEditNaverPrice] = useState<string>("");
@@ -301,10 +316,16 @@ export default function App() {
         throw new Error("API 키가 설정되지 않았습니다. 톱니바퀴 버튼을 눌러 API 키를 직접 입력해주세요.");
       }
       
-      const prompt = `You are an expert price auditor. Analyze the following raw copied text from a Korean e-commerce site (Naver Shopping or Coupang). 
-Extract the primary selling price, shipping fee, seller name, product name, and the platform.
+      const parts: any[] = [];
+      const queryContext = aiInputText.trim() || (selectedProduct ? selectedProduct.name : "추출");
 
-Text to analyze:
+      const promptText = `You are an expert price auditor. 
+Analyze the provided information (text and/or image) from a Korean e-commerce site (Naver Shopping or Coupang). 
+Extract the primary selling price, shipping fee, seller name, product name, and the platform.
+If multiple products exist (e.g. in a search results screenshot), focus heavily on finding the exact product named: "${queryContext}".
+If the exact product is not found, extract the price for the most prominent or first product shown.
+
+Text context provided by user:
 """
 ${aiInputText}
 """
@@ -318,11 +339,24 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
   "productName": string (the parsed product name)
 }`;
 
+      parts.push({ text: promptText });
+
+      if (aiInputImage) {
+        const base64Data = aiInputImage.split(',')[1];
+        const mimeType = aiInputImage.split(';')[0].split(':')[1];
+        parts.push({
+          inlineData: {
+            data: base64Data,
+            mimeType: mimeType
+          }
+        });
+      }
+
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ parts: parts }],
           generationConfig: { temperature: 0.1 }
         })
       });
@@ -1139,13 +1173,26 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                     )}
 
                     <textarea
-                      placeholder="제품 상세페이지나 옵션에서 드래그하여 복사한 글을 그대로 붙여넣어 주세요..."
+                      placeholder="텍스트를 붙여넣거나 화면 캡쳐(이미지)를 붙여넣어주세요... (Ctrl+V)"
                       value={aiInputText}
                       onChange={(e) => setAiInputText(e.target.value)}
+                      onPaste={handlePaste}
                       rows={3}
                       className="w-full p-2 text-xs bg-white border border-slate-200 rounded-lg outline-none resize-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
                       id="ai-text-textarea"
                     />
+
+                    {aiInputImage && (
+                      <div className="relative inline-block mt-1">
+                        <img src={aiInputImage} alt="Pasted" className="h-20 object-contain rounded border border-slate-200" />
+                        <button 
+                          onClick={() => setAiInputImage(null)}
+                          className="absolute -top-2 -right-2 bg-slate-800 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-rose-500"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
 
                     {aiParseError && (
                       <div className="text-xs text-rose-600 font-medium flex items-center gap-1">
