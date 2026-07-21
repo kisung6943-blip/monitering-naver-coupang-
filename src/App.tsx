@@ -768,27 +768,27 @@ export default function App() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Left: Input fields */}
+                <div className="flex flex-col gap-6">
+                  {/* Top: Input fields */}
                   <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col gap-4 shadow-sm">
                     <div className="flex justify-between items-center text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
                       <span>✏️ {selectedDate} 키워드 순위 입력</span>
                       <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold">✓ 자동 저장됨</span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       {Array.from({ length: 6 }).map((_, i) => {
                         const keywordName = selectedProduct?.keywords?.[i] || "";
                         const activeLog = priceLogs.find(l => l.productId === selectedProductId && l.date === selectedDate);
                         const keywordRank = activeLog?.keywordRanks?.[i] || "";
                         return (
                           <div key={i} className="flex items-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all shadow-xs">
-                            <span className="bg-slate-200/70 text-slate-500 font-bold px-3 py-2 text-xs border-r border-slate-200">{i+1}</span>
+                            <span className="bg-slate-200/70 text-slate-500 font-bold px-3 py-2.5 text-sm border-r border-slate-200">{i+1}</span>
                             <input 
                               type="text" 
                               placeholder="키워드 입력"
                               value={keywordName}
                               onChange={(e) => handleKeywordNameChange(selectedProductId, i, e.target.value)}
-                              className="w-full text-xs px-2 py-2 outline-none text-slate-800 font-medium bg-transparent placeholder-slate-400"
+                              className="w-full text-sm px-3 py-2.5 outline-none text-slate-800 font-medium bg-transparent placeholder-slate-400"
                             />
                             <div className="w-px h-6 bg-slate-200 shrink-0"></div>
                             <input 
@@ -796,7 +796,7 @@ export default function App() {
                               placeholder="순위"
                               value={keywordRank}
                               onChange={(e) => handleKeywordRankChange(selectedProductId, i, e.target.value)}
-                              className="w-14 text-xs px-2 py-2 outline-none text-blue-600 font-bold text-center shrink-0 placeholder-slate-300 bg-transparent"
+                              className="w-16 text-sm px-2 py-2.5 outline-none text-blue-600 font-bold text-center shrink-0 placeholder-slate-300 bg-transparent"
                             />
                           </div>
                         )
@@ -804,36 +804,46 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Right: Trend Table */}
+                  {/* Bottom: Trend Table */}
                   <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col gap-4 shadow-sm overflow-hidden">
                     <div className="flex justify-between items-center text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
-                      <span>📈 과거 키워드 순위 변동 추이</span>
+                      <span>📈 {selectedDate.substring(0, 7)}월 키워드 순위 변동 추이</span>
                     </div>
                     
-                    <div className="overflow-x-auto rounded-lg border border-slate-100 h-full">
+                    <div className="overflow-x-auto rounded-lg border border-slate-100 h-full pb-2">
                       <table className="w-full text-left border-collapse text-xs">
                         <thead>
                           <tr className="bg-slate-50 text-slate-500 border-b border-slate-100">
-                            <th className="p-2.5 font-bold whitespace-nowrap bg-slate-100 sticky left-0 z-10">키워드</th>
-                            {Array.from(new Set(priceLogs.filter(l => l.productId === selectedProductId).map(l => l.date))).sort().slice(-5).map(d => (
-                              <th key={d} className="p-2.5 font-bold text-center whitespace-nowrap">{d.substring(5)}</th>
-                            ))}
+                            <th className="p-3 font-bold whitespace-nowrap bg-slate-100 sticky left-0 z-10 border-r border-slate-200 min-w-[150px]">키워드</th>
+                            {(() => {
+                              const currentMonth = selectedDate.substring(0, 7);
+                              const dates = Array.from(new Set(priceLogs.filter(l => l.productId === selectedProductId && l.date.startsWith(currentMonth)).map(l => l.date))).sort();
+                              return dates.map(d => (
+                                <th key={d} className={`p-2 font-bold text-center whitespace-nowrap min-w-[50px] ${d === selectedDate ? 'bg-amber-100/50 text-amber-700' : ''}`}>
+                                  <div className="flex flex-col items-center">
+                                    <span className="text-[10px] opacity-70 font-normal">{d.substring(5, 7)}/</span>
+                                    <span>{d.substring(8, 10)}</span>
+                                  </div>
+                                </th>
+                              ));
+                            })()}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {Array.from({ length: 6 }).map((_, i) => {
                             const kw = selectedProduct?.keywords?.[i];
                             if (!kw) return null;
-                            const dates = Array.from(new Set(priceLogs.filter(l => l.productId === selectedProductId).map(l => l.date))).sort().slice(-5);
+                            const currentMonth = selectedDate.substring(0, 7);
+                            const dates = Array.from(new Set(priceLogs.filter(l => l.productId === selectedProductId && l.date.startsWith(currentMonth)).map(l => l.date))).sort();
                             return (
                               <tr key={i} className="hover:bg-slate-50/50">
-                                <td className="p-2.5 font-medium text-slate-800 max-w-[100px] truncate bg-white sticky left-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10" title={kw}>{kw}</td>
+                                <td className="p-3 font-semibold text-slate-800 min-w-[150px] max-w-[200px] truncate bg-white sticky left-0 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10" title={kw}>{kw}</td>
                                 {dates.map(d => {
                                   const log = priceLogs.find(l => l.productId === selectedProductId && l.date === d);
                                   const rank = log?.keywordRanks?.[i];
                                   return (
-                                    <td key={d} className="p-2.5 text-center">
-                                      {rank ? <span className="text-blue-600 font-bold">{rank}위</span> : <span className="text-slate-300">-</span>}
+                                    <td key={d} className={`p-2 text-center border-r border-slate-50 ${d === selectedDate ? 'bg-amber-50/50' : ''}`}>
+                                      {rank ? <span className="text-blue-600 font-bold text-[13px]">{rank}</span> : <span className="text-slate-200">-</span>}
                                     </td>
                                   )
                                 })}
@@ -844,7 +854,7 @@ export default function App() {
                       </table>
                       {(!selectedProduct?.keywords || !selectedProduct.keywords.some(k => k)) && (
                         <div className="p-10 text-center text-xs text-slate-400">
-                          왼쪽에서 키워드를 입력하시면<br/>최근 5일간의 순위 변동 추이가 여기에 표시됩니다.
+                          위에서 키워드를 입력하시면<br/>해당 월의 순위 변동 추이가 여기에 표시됩니다.
                         </div>
                       )}
                     </div>
