@@ -293,7 +293,7 @@ export default function App() {
     setAiParseError(null);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyCHZSj4f_EPBn-GGJyKXe5-zLgI_rUNglg";
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
         throw new Error("API 키가 설정되지 않았습니다. .env 파일에 VITE_GEMINI_API_KEY를 추가해주세요.");
       }
