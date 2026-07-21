@@ -1,0 +1,6 @@
+{
+  "name": "Naver Coupang Price Monitor",
+  "description": "네이버 쇼핑 및 쿠팡의 실시간 매일 가격 차액 모니터링 및 AI 기반 텍스트 가격 파싱 대시보드",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
