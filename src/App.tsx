@@ -816,8 +816,12 @@ export default function App() {
                           <tr className="bg-slate-50 text-slate-500 border-b border-slate-100">
                             <th className="p-3 font-bold whitespace-nowrap bg-slate-100 sticky left-0 z-10 border-r border-slate-200 min-w-[150px]">키워드</th>
                             {(() => {
-                              const currentMonth = selectedDate.substring(0, 7);
-                              const dates = Array.from(new Set(priceLogs.filter(l => l.productId === selectedProductId && l.date.startsWith(currentMonth)).map(l => l.date))).sort();
+                              const year = parseInt(selectedDate.substring(0, 4));
+                              const month = parseInt(selectedDate.substring(5, 7));
+                              const daysInMonth = new Date(year, month, 0).getDate();
+                              const dates = Array.from({ length: daysInMonth }).map((_, i) => 
+                                `${selectedDate.substring(0, 7)}-${(i + 1).toString().padStart(2, '0')}`
+                              );
                               return dates.map(d => (
                                 <th key={d} className={`p-2 font-bold text-center whitespace-nowrap min-w-[50px] ${d === selectedDate ? 'bg-amber-100/50 text-amber-700' : ''}`}>
                                   <div className="flex flex-col items-center">
@@ -833,8 +837,12 @@ export default function App() {
                           {Array.from({ length: 6 }).map((_, i) => {
                             const kw = selectedProduct?.keywords?.[i];
                             if (!kw) return null;
-                            const currentMonth = selectedDate.substring(0, 7);
-                            const dates = Array.from(new Set(priceLogs.filter(l => l.productId === selectedProductId && l.date.startsWith(currentMonth)).map(l => l.date))).sort();
+                            const year = parseInt(selectedDate.substring(0, 4));
+                            const month = parseInt(selectedDate.substring(5, 7));
+                            const daysInMonth = new Date(year, month, 0).getDate();
+                            const dates = Array.from({ length: daysInMonth }).map((_, i) => 
+                              `${selectedDate.substring(0, 7)}-${(i + 1).toString().padStart(2, '0')}`
+                            );
                             return (
                               <tr key={i} className="hover:bg-slate-50/50">
                                 <td className="p-3 font-semibold text-slate-800 min-w-[150px] max-w-[200px] truncate bg-white sticky left-0 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10" title={kw}>{kw}</td>
