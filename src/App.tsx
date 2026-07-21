@@ -28,12 +28,82 @@ export default function App() {
   
   // AI Parsing states
   const [aiInputText, setAiInputText] = useState<string>("");
-  const [aiParsingPlatform, setAiParsingPlatform] = useState<"naver" | "coupang">("naver");
-  const [isAiParsing, setIsAiParsing] = useState<boolean>(false);
+  const [isAiParsing, setIsAiParsing] = useState(false);
   const [aiParseError, setAiParseError] = useState<string | null>(null);
+  const [aiParsingPlatform, setAiParsingPlatform] = useState<"naver" | "coupang">("naver");
   const [localApiKey, setLocalApiKey] = useState(() => localStorage.getItem("gemini_api_key") || "");
   const [showApiKeyInput, setShowApiKeyInput] = useState(!import.meta.env.VITE_GEMINI_API_KEY && !localStorage.getItem("gemini_api_key"));
   const [aiInputImage, setAiInputImage] = useState<string | null>(null);
+  
+  // Keyword Rank AI parsing
+  const [activeAiKeywordIndex, setActiveAiKeywordIndex] = useState<number | null>(null);
+  const [isKeywordAiParsing, setIsKeywordAiParsing] = useState<boolean>(false);
+
+  const handleKeywordAiParse = async (index: number, text: string) => {
+    if (!text.trim()) return;
+    
+    setIsKeywordAiParsing(true);
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || localApiKey;
+      if (!apiKey) {
+        throw new Error("API 키가 없습니다. 상단의 AI 가격 분석 폼에서 톱니바퀴 버튼을 눌러 API 키를 먼저 입력해주세요.");
+      }
+      
+      const selectedProduct = products.find(p => p.id === selectedProductId);
+      const keyword = selectedProduct?.keywords?.[index] || "";
+      const queryContext = selectedProduct ? selectedProduct.name : "";
+
+      const prompt = `You are an expert e-commerce rank auditor. 
+Analyze the provided raw search results text from a Korean e-commerce site (pasted by the user).
+Your task is to find all occurrences of products sold by the user's shop (e.g. "ES리빙") OR matching the product name "${queryContext}".
+Count the items from top to bottom (ignoring irrelevant UI text, focus on actual product blocks).
+Return a JSON object containing the numerical positions (ranks) where these products appear.
+If multiple are found, return them as a comma-separated string (e.g. "3, 12"). If none found, return "-".
+
+Text to analyze:
+"""
+${text}
+"""
+
+Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exactly this field:
+{
+  "ranks": string (e.g. "3, 12" or "3" or "-")
+}`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1 }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("AI 서버와의 통신에 실패했습니다.");
+      }
+
+      const rawData = await response.json();
+      const generatedText = rawData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      let data;
+      try {
+        const cleanedText = generatedText.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+        data = JSON.parse(cleanedText);
+      } catch (e) {
+        throw new Error("AI 응답을 분석할 수 없습니다.");
+      }
+
+      if (data.ranks) {
+        handleKeywordRankChange(selectedProductId, index, data.ranks);
+        showToast(`✅ [${keyword}] 순위(${data.ranks})가 자동 입력되었습니다!`);
+      }
+    } catch (error: any) {
+      showToast(`⚠️ 순위 분석 에러: ${error.message}`);
+    } finally {
+      setIsKeywordAiParsing(false);
+      setActiveAiKeywordIndex(null);
+    }
+  };
 
   const handlePaste = (e: React.ClipboardEvent) => {
     if (e.clipboardData.files && e.clipboardData.files.length > 0) {
@@ -877,29 +947,64 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                       <span>✏️ {selectedDate} 키워드 순위 입력</span>
                       <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold">✓ 자동 저장됨</span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {Array.from({ length: 6 }).map((_, i) => {
                         const keywordName = selectedProduct?.keywords?.[i] || "";
                         const activeLog = priceLogs.find(l => l.productId === selectedProductId && l.date === selectedDate);
                         const keywordRank = activeLog?.keywordRanks?.[i] || "";
                         return (
-                          <div key={i} className="flex items-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all shadow-xs">
-                            <span className="bg-slate-200/70 text-slate-500 font-bold px-3 py-2.5 text-sm border-r border-slate-200">{i+1}</span>
-                            <input 
-                              type="text" 
-                              placeholder="키워드 입력"
-                              value={keywordName}
-                              onChange={(e) => handleKeywordNameChange(selectedProductId, i, e.target.value)}
-                              className="w-full text-sm px-3 py-2.5 outline-none text-slate-800 font-medium bg-transparent placeholder-slate-400"
-                            />
-                            <div className="w-px h-6 bg-slate-200 shrink-0"></div>
-                            <input 
-                              type="text" 
-                              placeholder="순위"
-                              value={keywordRank}
-                              onChange={(e) => handleKeywordRankChange(selectedProductId, i, e.target.value)}
-                              className="w-16 text-sm px-2 py-2.5 outline-none text-blue-600 font-bold text-center shrink-0 placeholder-slate-300 bg-transparent"
-                            />
+                          <div key={i} className="flex flex-col gap-1.5">
+                            <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all shadow-xs">
+                              <span className="bg-slate-200/70 text-slate-500 font-bold px-3 py-2.5 text-sm border-r border-slate-200">{i+1}</span>
+                              <input 
+                                type="text" 
+                                placeholder="키워드 입력"
+                                value={keywordName}
+                                onChange={(e) => handleKeywordNameChange(selectedProductId, i, e.target.value)}
+                                className="w-full text-sm px-3 py-2.5 outline-none text-slate-800 font-medium bg-transparent placeholder-slate-400"
+                              />
+                              <div className="w-px h-6 bg-slate-200 shrink-0"></div>
+                              <input 
+                                type="text" 
+                                placeholder="순위"
+                                value={keywordRank}
+                                onChange={(e) => handleKeywordRankChange(selectedProductId, i, e.target.value)}
+                                className="w-16 text-sm px-2 py-2.5 outline-none text-blue-600 font-bold text-center shrink-0 placeholder-slate-300 bg-transparent"
+                              />
+                              <button 
+                                onClick={() => setActiveAiKeywordIndex(activeAiKeywordIndex === i ? null : i)}
+                                className={`px-2 py-2.5 text-xs font-bold border-l border-slate-200 hover:bg-emerald-100 transition-colors ${activeAiKeywordIndex === i ? 'bg-emerald-200 text-emerald-800' : 'bg-slate-200 text-slate-600'}`}
+                                title="AI 순위 자동 분석"
+                              >
+                                ✨
+                              </button>
+                            </div>
+
+                            {activeAiKeywordIndex === i && (
+                              <div className="bg-emerald-50/80 p-2.5 rounded-lg border border-emerald-200 flex flex-col gap-2 shadow-inner mt-1">
+                                <div className="text-[11px] text-emerald-800 font-bold flex justify-between items-center">
+                                  <span>🚀 '{keywordName || "키워드"}' 검색결과 붙여넣기</span>
+                                  <button onClick={() => setActiveAiKeywordIndex(null)} className="text-emerald-500 hover:text-emerald-700 font-bold">✕</button>
+                                </div>
+                                <textarea
+                                  placeholder="검색 결과 화면에서 Ctrl+A -> Ctrl+C 후 여기에 Ctrl+V로 붙여넣으세요..."
+                                  className="w-full text-[10px] p-2 outline-none border border-emerald-200 rounded resize-none h-16 focus:ring-1 focus:ring-emerald-400 bg-white placeholder-emerald-800/30 text-emerald-900"
+                                  onPaste={(e) => {
+                                    const text = e.clipboardData.getData('text');
+                                    if (text) {
+                                      e.preventDefault();
+                                      handleKeywordAiParse(i, text);
+                                    }
+                                  }}
+                                  disabled={isKeywordAiParsing}
+                                ></textarea>
+                                {isKeywordAiParsing && (
+                                  <div className="text-[10px] text-emerald-600 font-bold animate-pulse text-center flex items-center justify-center gap-1">
+                                    <Sparkles size={12} /> AI가 순위를 분석 중입니다...
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )
                       })}
