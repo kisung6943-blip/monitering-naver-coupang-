@@ -56,20 +56,24 @@ export default function App() {
 
       const prompt = `You are an expert e-commerce rank auditor. 
 Analyze the provided raw search results text from a Korean e-commerce site.
-The user wants to find the exact ranking of ONE SPECIFIC PRODUCT they are monitoring.
+The user wants to find the exact ORGANIC ranking of ONE SPECIFIC PRODUCT they are monitoring.
 
 [TARGET TO FIND]
 1. Target Seller/Store Name: "${myStoreName}"
 2. Target Product Name: "${queryContext}"
 
-CRITICAL INSTRUCTION: 
+[CRITICAL COUNTING RULES - IGNORE ADS]
+In Korean e-commerce, the first few items are usually Sponsored Ads (labeled as "광고").
+You MUST completely IGNORE any product blocks that contain the label "광고". Do not include them in your counting at all.
+Start counting Rank 1 from the FIRST organic (non-ad) product, and count downwards organically.
+
+[CRITICAL MATCHING INSTRUCTION]
 You must look for an item that matches BOTH the Seller Name AND is semantically the same product as the Target Product Name. 
-(Note: The product name in the search text might be longer or slightly different, e.g. 'Fissler pressure cooker parts rubber packing' instead of just 'Fissler rubber packing'. Use your judgment to find this specific item).
+(Note: The product name in the search text might be longer, e.g. 'Fissler pressure cooker parts rubber packing' instead of 'Fissler rubber packing'. Use your judgment).
 DO NOT return ranks for other completely different products sold by "${myStoreName}".
 
-Count all the product items from top to bottom.
-Return a JSON object containing the SINGLE numerical position (rank) of this specific product.
-If you happen to find it twice (e.g., one ad, one organic), return them comma-separated (e.g. "3, 12"). If not found, return "-".
+Return a JSON object containing the SINGLE numerical position (rank) of this specific product in the ORGANIC search results.
+If you happen to find it multiple times in organic results, return them comma-separated (e.g. "3, 12"). If not found, return "-".
 
 Text to analyze:
 """
