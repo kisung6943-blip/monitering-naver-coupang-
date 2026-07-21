@@ -55,16 +55,21 @@ export default function App() {
       const queryContext = selectedProduct ? selectedProduct.name : "";
 
       const prompt = `You are an expert e-commerce rank auditor. 
-Analyze the provided raw search results text from a Korean e-commerce site (pasted by the user).
-The user wants to find the exact ranking of THEIR OWN specific products.
-The user's store name (seller name) is "${myStoreName}".
+Analyze the provided raw search results text from a Korean e-commerce site.
+The user wants to find the exact ranking of ONE SPECIFIC PRODUCT they are monitoring.
 
-CRITICAL INSTRUCTION: You MUST ONLY look for products where the seller/shop name is EXACTLY "${myStoreName}".
-DO NOT match products just because they have a similar product name. Ignore all products sold by other competitors.
+[TARGET TO FIND]
+1. Target Seller/Store Name: "${myStoreName}"
+2. Target Product Name: "${queryContext}"
+
+CRITICAL INSTRUCTION: 
+You must look for an item that matches BOTH the Seller Name AND is semantically the same product as the Target Product Name. 
+(Note: The product name in the search text might be longer or slightly different, e.g. 'Fissler pressure cooker parts rubber packing' instead of just 'Fissler rubber packing'. Use your judgment to find this specific item).
+DO NOT return ranks for other completely different products sold by "${myStoreName}".
 
 Count all the product items from top to bottom.
-Return a JSON object containing the numerical positions (ranks) where "${myStoreName}"'s products appear.
-If multiple are found, return them as a comma-separated string (e.g. "3, 12"). If none found, return "-".
+Return a JSON object containing the SINGLE numerical position (rank) of this specific product.
+If you happen to find it twice (e.g., one ad, one organic), return them comma-separated (e.g. "3, 12"). If not found, return "-".
 
 Text to analyze:
 """
@@ -73,7 +78,7 @@ ${text}
 
 Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exactly this field:
 {
-  "ranks": string (e.g. "3, 12" or "3" or "-")
+  "ranks": string (e.g. "3" or "3, 12" or "-")
 }`;
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
