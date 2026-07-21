@@ -348,23 +348,23 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
         if (data.platform === "naver") {
           setEditNaverPrice(data.price ? data.price.toString() : "0");
           setEditNaverShipping(data.shipping ? data.shipping.toString() : "0");
-          showToast("네이버 가격을 AI가 파싱하여 입력했습니다!");
+          showToast(data.price ? "✅ 네이버 폼에 가격이 채워졌습니다! 맨 아래 주황색 [저장하기] 버튼을 눌러주세요." : "⚠️ 텍스트에서 가격을 찾지 못해 0원으로 입력되었습니다.");
         } else if (data.platform === "coupang") {
           setEditCoupangPrice(data.price ? data.price.toString() : "0");
           setEditCoupangShipping(data.shipping ? data.shipping.toString() : "0");
           setEditCoupangSeller(data.seller || "쿠팡");
-          showToast("쿠팡 가격을 AI가 파싱하여 입력했습니다!");
+          showToast(data.price ? "✅ 쿠팡 폼에 가격이 채워졌습니다! 맨 아래 주황색 [저장하기] 버튼을 눌러주세요." : "⚠️ 텍스트에서 가격을 찾지 못해 0원으로 입력되었습니다.");
         } else {
           // If unsure, prompt user where to apply or pre-fill both
           if (aiParsingPlatform === "naver") {
             setEditNaverPrice(data.price ? data.price.toString() : "0");
             setEditNaverShipping(data.shipping ? data.shipping.toString() : "0");
-            showToast("네이버 폼으로 AI 추출가격을 적용했습니다.");
+            showToast(data.price ? "✅ 네이버 폼에 추출된 가격이 채워졌습니다! 아래 주황색 버튼으로 저장하세요." : "⚠️ 텍스트에서 숫자를 찾지 못했습니다. 진짜 가격이 포함된 글을 복사해주세요.");
           } else {
             setEditCoupangPrice(data.price ? data.price.toString() : "0");
             setEditCoupangShipping(data.shipping ? data.shipping.toString() : "0");
             setEditCoupangSeller(data.seller || "타판매자");
-            showToast("쿠팡 폼으로 AI 추출가격을 적용했습니다.");
+            showToast(data.price ? "✅ 쿠팡 폼에 추출된 가격이 채워졌습니다! 아래 주황색 버튼으로 저장하세요." : "⚠️ 텍스트에서 숫자를 찾지 못했습니다. 진짜 가격이 포함된 글을 복사해주세요.");
           }
         }
       }
