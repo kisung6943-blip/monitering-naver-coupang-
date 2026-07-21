@@ -37,10 +37,10 @@ export default function App() {
   
   // Keyword Rank AI parsing
   const [myStoreName, setMyStoreName] = useState(() => localStorage.getItem("my_store_name") || "ES리빙");
-  const [activeAiKeywordIndex, setActiveAiKeywordIndex] = useState<number | null>(null);
+  const [activeAiKeywordIndex, setActiveAiKeywordIndex] = useState<{ index: number, platform: 'naver' | 'coupang' } | null>(null);
   const [isKeywordAiParsing, setIsKeywordAiParsing] = useState<boolean>(false);
 
-  const handleKeywordAiParse = async (index: number, text: string) => {
+  const handleKeywordAiParse = async (index: number, text: string, platform: 'naver' | 'coupang') => {
     if (!text.trim()) return;
     
     setIsKeywordAiParsing(true);
@@ -115,8 +115,12 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
       }
 
       if (data.ranks) {
-        handleKeywordRankChange(selectedProductId, index, data.ranks);
-        showToast(`✅ [${keyword}] 순위(${data.ranks})가 자동 입력되었습니다!`);
+        if (platform === 'naver') {
+          handleKeywordRankChange(selectedProductId, index, data.ranks);
+        } else {
+          handleCoupangKeywordRankChange(selectedProductId, index, data.ranks);
+        }
+        showToast(`✅ [${keyword}] ${platform === 'naver' ? '네이버' : '쿠팡'} 순위(${data.ranks})가 자동 입력되었습니다!`);
       }
     } catch (error: any) {
       showToast(`⚠️ 순위 분석 에러: ${error.message}`);
@@ -355,6 +359,37 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
         coupangSeller: "", coupangPrice: 0, coupangShipping: 0, coupangTotal: 0,
         difference: 0,
         keywordRanks: ranks
+      };
+      updatedLogs.push(newLog);
+    }
+    setPriceLogs(updatedLogs);
+    localStorage.setItem("price_monitor_logs", JSON.stringify(updatedLogs));
+  };
+
+  const handleCoupangKeywordRankChange = (productId: string, index: number, value: string) => {
+    const existingLogIndex = priceLogs.findIndex(
+      (log) => log.productId === productId && log.date === selectedDate
+    );
+    const updatedLogs = [...priceLogs];
+    
+    if (existingLogIndex >= 0) {
+      const log = { ...updatedLogs[existingLogIndex] };
+      const ranks = [...(log.coupangKeywordRanks || Array(6).fill(""))];
+      ranks[index] = value;
+      log.coupangKeywordRanks = ranks;
+      updatedLogs[existingLogIndex] = log;
+    } else {
+      const ranks = Array(6).fill("");
+      ranks[index] = value;
+      const newLog: PriceLog = {
+        id: `log-${productId}-${selectedDate}`,
+        date: selectedDate,
+        productId,
+        naverPrice: 0, naverShipping: 0, naverTotal: 0,
+        coupangSeller: "", coupangPrice: 0, coupangShipping: 0, coupangTotal: 0,
+        difference: 0,
+        keywordRanks: Array(6).fill(""),
+        coupangKeywordRanks: ranks
       };
       updatedLogs.push(newLog);
     }
@@ -980,7 +1015,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                   {/* Top: Input fields */}
                   <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col gap-4 shadow-sm">
                     <div className="flex justify-between items-center text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
-                      <span>✏️ {selectedDate} 키워드 순위 입력</span>
+                      <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> {selectedDate} 네이버 키워드 순위 입력</span>
                       <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold">✓ 자동 저장됨</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1005,38 +1040,108 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                                 placeholder="순위"
                                 value={keywordRank}
                                 onChange={(e) => handleKeywordRankChange(selectedProductId, i, e.target.value)}
-                                className="w-16 text-sm px-2 py-2.5 outline-none text-blue-600 font-bold text-center shrink-0 placeholder-slate-300 bg-transparent"
+                                className="w-16 text-sm px-2 py-2.5 outline-none text-emerald-600 font-bold text-center shrink-0 placeholder-slate-300 bg-transparent"
                               />
                               <button 
-                                onClick={() => setActiveAiKeywordIndex(activeAiKeywordIndex === i ? null : i)}
-                                className={`px-2 py-2.5 text-xs font-bold border-l border-slate-200 hover:bg-emerald-100 transition-colors ${activeAiKeywordIndex === i ? 'bg-emerald-200 text-emerald-800' : 'bg-slate-200 text-slate-600'}`}
-                                title="AI 순위 자동 분석"
+                                onClick={() => setActiveAiKeywordIndex(activeAiKeywordIndex?.index === i && activeAiKeywordIndex?.platform === 'naver' ? null : { index: i, platform: 'naver' })}
+                                className={`px-2 py-2.5 text-xs font-bold border-l border-slate-200 hover:bg-emerald-100 transition-colors ${activeAiKeywordIndex?.index === i && activeAiKeywordIndex?.platform === 'naver' ? 'bg-emerald-200 text-emerald-800' : 'bg-slate-200 text-slate-600'}`}
+                                title="AI 네이버 순위 분석"
                               >
                                 ✨
                               </button>
                             </div>
 
-                            {activeAiKeywordIndex === i && (
+                            {activeAiKeywordIndex?.index === i && activeAiKeywordIndex?.platform === 'naver' && (
                               <div className="bg-emerald-50/80 p-2.5 rounded-lg border border-emerald-200 flex flex-col gap-2 shadow-inner mt-1">
                                 <div className="text-[11px] text-emerald-800 font-bold flex justify-between items-center">
-                                  <span>🚀 '{keywordName || "키워드"}' 검색결과 붙여넣기</span>
+                                  <span>🚀 네이버 '{keywordName || "키워드"}' 검색결과 복사/붙여넣기</span>
                                   <button onClick={() => setActiveAiKeywordIndex(null)} className="text-emerald-500 hover:text-emerald-700 font-bold">✕</button>
                                 </div>
                                 <textarea
-                                  placeholder="검색 결과 화면에서 Ctrl+A -> Ctrl+C 후 여기에 Ctrl+V로 붙여넣으세요..."
+                                  placeholder="네이버 검색 결과 화면 전체(Ctrl+A -> Ctrl+C) 후 여기에 붙여넣기(Ctrl+V)"
                                   className="w-full text-[10px] p-2 outline-none border border-emerald-200 rounded resize-none h-16 focus:ring-1 focus:ring-emerald-400 bg-white placeholder-emerald-800/30 text-emerald-900"
                                   onPaste={(e) => {
                                     const text = e.clipboardData.getData('text');
                                     if (text) {
                                       e.preventDefault();
-                                      handleKeywordAiParse(i, text);
+                                      handleKeywordAiParse(i, text, 'naver');
                                     }
                                   }}
                                   disabled={isKeywordAiParsing}
                                 ></textarea>
                                 {isKeywordAiParsing && (
                                   <div className="text-[10px] text-emerald-600 font-bold animate-pulse text-center flex items-center justify-center gap-1">
-                                    <Sparkles size={12} /> AI가 순위를 분석 중입니다...
+                                    <Sparkles size={12} /> AI가 네이버 순위를 분석 중입니다...
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Coupang: Input fields */}
+                  <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col gap-4 shadow-sm">
+                    <div className="flex justify-between items-center text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
+                      <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> {selectedDate} 쿠팡 키워드 순위 입력</span>
+                      <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold">✓ 자동 저장됨</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {Array.from({ length: 6 }).map((_, i) => {
+                        const keywordName = selectedProduct?.keywords?.[i] || "";
+                        const activeLog = priceLogs.find(l => l.productId === selectedProductId && l.date === selectedDate);
+                        const keywordRankCoupang = activeLog?.coupangKeywordRanks?.[i] || "";
+                        return (
+                          <div key={i} className="flex flex-col gap-1.5">
+                            <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all shadow-xs">
+                              <span className="bg-slate-200/70 text-slate-500 font-bold px-3 py-2.5 text-sm border-r border-slate-200">{i+1}</span>
+                              <input 
+                                type="text" 
+                                placeholder="키워드 입력"
+                                value={keywordName}
+                                onChange={(e) => handleKeywordNameChange(selectedProductId, i, e.target.value)}
+                                className="w-full text-sm px-3 py-2.5 outline-none text-slate-800 font-medium bg-transparent placeholder-slate-400"
+                              />
+                              <div className="w-px h-6 bg-slate-200 shrink-0"></div>
+                              <input 
+                                type="text" 
+                                placeholder="순위"
+                                value={keywordRankCoupang}
+                                onChange={(e) => handleCoupangKeywordRankChange(selectedProductId, i, e.target.value)}
+                                className="w-16 text-sm px-2 py-2.5 outline-none text-blue-600 font-bold text-center shrink-0 placeholder-slate-300 bg-transparent"
+                              />
+                              <button 
+                                onClick={() => setActiveAiKeywordIndex(activeAiKeywordIndex?.index === i && activeAiKeywordIndex?.platform === 'coupang' ? null : { index: i, platform: 'coupang' })}
+                                className={`px-2 py-2.5 text-xs font-bold border-l border-slate-200 hover:bg-blue-100 transition-colors ${activeAiKeywordIndex?.index === i && activeAiKeywordIndex?.platform === 'coupang' ? 'bg-blue-200 text-blue-800' : 'bg-slate-200 text-slate-600'}`}
+                                title="AI 쿠팡 순위 분석"
+                              >
+                                ✨
+                              </button>
+                            </div>
+
+                            {activeAiKeywordIndex?.index === i && activeAiKeywordIndex?.platform === 'coupang' && (
+                              <div className="bg-blue-50/80 p-2.5 rounded-lg border border-blue-200 flex flex-col gap-2 shadow-inner mt-1">
+                                <div className="text-[11px] text-blue-800 font-bold flex justify-between items-center">
+                                  <span>🚀 쿠팡 '{keywordName || "키워드"}' 검색결과 복사/붙여넣기</span>
+                                  <button onClick={() => setActiveAiKeywordIndex(null)} className="text-blue-500 hover:text-blue-700 font-bold">✕</button>
+                                </div>
+                                <textarea
+                                  placeholder="쿠팡 검색 결과 화면 전체(Ctrl+A -> Ctrl+C) 후 여기에 붙여넣기(Ctrl+V)"
+                                  className="w-full text-[10px] p-2 outline-none border border-blue-200 rounded resize-none h-16 focus:ring-1 focus:ring-blue-400 bg-white placeholder-blue-800/30 text-blue-900"
+                                  onPaste={(e) => {
+                                    const text = e.clipboardData.getData('text');
+                                    if (text) {
+                                      e.preventDefault();
+                                      handleKeywordAiParse(i, text, 'coupang');
+                                    }
+                                  }}
+                                  disabled={isKeywordAiParsing}
+                                ></textarea>
+                                {isKeywordAiParsing && (
+                                  <div className="text-[10px] text-blue-600 font-bold animate-pulse text-center flex items-center justify-center gap-1">
+                                    <Sparkles size={12} /> AI가 쿠팡 순위를 분석 중입니다...
                                   </div>
                                 )}
                               </div>
@@ -1087,18 +1192,40 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                               `${selectedDate.substring(0, 7)}-${(i + 1).toString().padStart(2, '0')}`
                             );
                             return (
-                              <tr key={i} className="hover:bg-slate-50/50">
-                                <td className="p-3 font-semibold text-slate-800 min-w-[150px] max-w-[200px] truncate bg-white sticky left-0 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10" title={kw}>{kw}</td>
-                                {dates.map(d => {
-                                  const log = priceLogs.find(l => l.productId === selectedProductId && l.date === d);
-                                  const rank = log?.keywordRanks?.[i];
-                                  return (
-                                    <td key={d} className={`p-2 text-center border-r border-slate-50 ${d === selectedDate ? 'bg-amber-50/50' : ''}`}>
-                                      {rank ? <span className="text-blue-600 font-bold text-[13px]">{rank}</span> : <span className="text-slate-200">-</span>}
-                                    </td>
-                                  )
-                                })}
-                              </tr>
+                              <React.Fragment key={i}>
+                                {/* Naver Row */}
+                                <tr className="hover:bg-slate-50/50">
+                                  <td className="p-2 font-semibold text-emerald-800 min-w-[150px] max-w-[200px] truncate bg-emerald-50/30 sticky left-0 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10 flex items-center gap-1.5" title={kw}>
+                                    <span className="text-[9px] bg-emerald-500 text-white px-1 py-0.5 rounded font-bold shrink-0">N</span>
+                                    <span className="truncate">{kw}</span>
+                                  </td>
+                                  {dates.map(d => {
+                                    const log = priceLogs.find(l => l.productId === selectedProductId && l.date === d);
+                                    const rank = log?.keywordRanks?.[i];
+                                    return (
+                                      <td key={`naver-${d}`} className={`p-2 text-center border-r border-slate-50 ${d === selectedDate ? 'bg-amber-50/50' : ''}`}>
+                                        {rank ? <span className="text-emerald-600 font-bold text-[13px]">{rank}</span> : <span className="text-slate-200">-</span>}
+                                      </td>
+                                    )
+                                  })}
+                                </tr>
+                                {/* Coupang Row */}
+                                <tr className="hover:bg-slate-50/50 border-b-2 border-slate-100">
+                                  <td className="p-2 font-semibold text-blue-800 min-w-[150px] max-w-[200px] truncate bg-blue-50/30 sticky left-0 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10 flex items-center gap-1.5" title={kw}>
+                                    <span className="text-[9px] bg-blue-500 text-white px-1 py-0.5 rounded font-bold shrink-0">C</span>
+                                    <span className="truncate">{kw}</span>
+                                  </td>
+                                  {dates.map(d => {
+                                    const log = priceLogs.find(l => l.productId === selectedProductId && l.date === d);
+                                    const rank = log?.coupangKeywordRanks?.[i];
+                                    return (
+                                      <td key={`coupang-${d}`} className={`p-2 text-center border-r border-slate-50 ${d === selectedDate ? 'bg-amber-50/50' : ''}`}>
+                                        {rank ? <span className="text-blue-600 font-bold text-[13px]">{rank}</span> : <span className="text-slate-200">-</span>}
+                                      </td>
+                                    )
+                                  })}
+                                </tr>
+                              </React.Fragment>
                             );
                           })}
                           {(() => {
