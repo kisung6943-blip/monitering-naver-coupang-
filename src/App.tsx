@@ -1154,8 +1154,9 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
 
                   {/* Bottom: Trend Table */}
                   <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col gap-4 shadow-sm overflow-hidden">
+                    {/* Naver Trend Table */}
                     <div className="flex justify-between items-center text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
-                      <span>📈 {selectedDate.substring(0, 7)}월 키워드 순위 변동 추이</span>
+                      <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> 📈 {selectedDate.substring(0, 7)}월 네이버 키워드 순위 변동 추이</span>
                     </div>
                     
                     <div className="overflow-x-auto rounded-lg border border-slate-100 h-full pb-2">
@@ -1192,40 +1193,84 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                               `${selectedDate.substring(0, 7)}-${(i + 1).toString().padStart(2, '0')}`
                             );
                             return (
-                              <React.Fragment key={i}>
-                                {/* Naver Row */}
-                                <tr className="hover:bg-slate-50/50">
-                                  <td className="p-2 font-semibold text-emerald-800 min-w-[150px] max-w-[200px] truncate bg-emerald-50/30 sticky left-0 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10 flex items-center gap-1.5" title={kw}>
-                                    <span className="text-[9px] bg-emerald-500 text-white px-1 py-0.5 rounded font-bold shrink-0">N</span>
-                                    <span className="truncate">{kw}</span>
-                                  </td>
-                                  {dates.map(d => {
-                                    const log = priceLogs.find(l => l.productId === selectedProductId && l.date === d);
-                                    const rank = log?.keywordRanks?.[i];
-                                    return (
-                                      <td key={`naver-${d}`} className={`p-2 text-center border-r border-slate-50 ${d === selectedDate ? 'bg-amber-50/50' : ''}`}>
-                                        {rank ? <span className="text-emerald-600 font-bold text-[13px]">{rank}</span> : <span className="text-slate-200">-</span>}
-                                      </td>
-                                    )
-                                  })}
-                                </tr>
-                                {/* Coupang Row */}
-                                <tr className="hover:bg-slate-50/50 border-b-2 border-slate-100">
-                                  <td className="p-2 font-semibold text-blue-800 min-w-[150px] max-w-[200px] truncate bg-blue-50/30 sticky left-0 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10 flex items-center gap-1.5" title={kw}>
-                                    <span className="text-[9px] bg-blue-500 text-white px-1 py-0.5 rounded font-bold shrink-0">C</span>
-                                    <span className="truncate">{kw}</span>
-                                  </td>
-                                  {dates.map(d => {
-                                    const log = priceLogs.find(l => l.productId === selectedProductId && l.date === d);
-                                    const rank = log?.coupangKeywordRanks?.[i];
-                                    return (
-                                      <td key={`coupang-${d}`} className={`p-2 text-center border-r border-slate-50 ${d === selectedDate ? 'bg-amber-50/50' : ''}`}>
-                                        {rank ? <span className="text-blue-600 font-bold text-[13px]">{rank}</span> : <span className="text-slate-200">-</span>}
-                                      </td>
-                                    )
-                                  })}
-                                </tr>
-                              </React.Fragment>
+                              <tr key={i} className="hover:bg-slate-50/50">
+                                <td className="p-2.5 font-semibold text-emerald-800 min-w-[150px] max-w-[200px] truncate bg-emerald-50/30 sticky left-0 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10" title={kw}>
+                                  {kw}
+                                </td>
+                                {dates.map(d => {
+                                  const log = priceLogs.find(l => l.productId === selectedProductId && l.date === d);
+                                  const rank = log?.keywordRanks?.[i];
+                                  return (
+                                    <td key={d} className={`p-2 text-center border-r border-slate-50 ${d === selectedDate ? 'bg-amber-50/50' : ''}`}>
+                                      {rank ? <span className="text-emerald-600 font-bold text-[13px]">{rank}</span> : <span className="text-slate-200">-</span>}
+                                    </td>
+                                  )
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                      {(!selectedProduct?.keywords || !selectedProduct.keywords.some(k => k)) && (
+                        <div className="p-10 text-center text-xs text-slate-400">
+                          위에서 키워드를 입력하시면<br/>해당 월의 네이버 순위 변동 추이가 여기에 표시됩니다.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Coupang Trend Table */}
+                    <div className="flex justify-between items-center text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 mt-4">
+                      <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> 📈 {selectedDate.substring(0, 7)}월 쿠팡 키워드 순위 변동 추이</span>
+                    </div>
+                    
+                    <div className="overflow-x-auto rounded-lg border border-slate-100 h-full pb-2">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-slate-50 text-slate-500 border-b border-slate-100">
+                            <th className="p-3 font-bold whitespace-nowrap bg-slate-100 sticky left-0 z-10 border-r border-slate-200 min-w-[150px]">키워드</th>
+                            {(() => {
+                              const year = parseInt(selectedDate.substring(0, 4));
+                              const month = parseInt(selectedDate.substring(5, 7));
+                              const daysInMonth = new Date(year, month, 0).getDate();
+                              const dates = Array.from({ length: daysInMonth }).map((_, i) => 
+                                `${selectedDate.substring(0, 7)}-${(i + 1).toString().padStart(2, '0')}`
+                              );
+                              return dates.map(d => (
+                                <th key={d} className={`p-2 font-bold text-center whitespace-nowrap min-w-[50px] ${d === selectedDate ? 'bg-amber-100/50 text-amber-700' : ''}`}>
+                                  <div className="flex flex-col items-center">
+                                    <span className="text-[10px] opacity-70 font-normal">{d.substring(5, 7)}/</span>
+                                    <span>{d.substring(8, 10)}</span>
+                                  </div>
+                                </th>
+                              ));
+                            })()}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {Array.from({ length: 6 }).map((_, i) => {
+                            const kw = selectedProduct?.keywords?.[i];
+                            if (!kw) return null;
+                            const year = parseInt(selectedDate.substring(0, 4));
+                            const month = parseInt(selectedDate.substring(5, 7));
+                            const daysInMonth = new Date(year, month, 0).getDate();
+                            const dates = Array.from({ length: daysInMonth }).map((_, i) => 
+                              `${selectedDate.substring(0, 7)}-${(i + 1).toString().padStart(2, '0')}`
+                            );
+                            return (
+                              <tr key={i} className="hover:bg-slate-50/50">
+                                <td className="p-2.5 font-semibold text-blue-800 min-w-[150px] max-w-[200px] truncate bg-blue-50/30 sticky left-0 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10" title={kw}>
+                                  {kw}
+                                </td>
+                                {dates.map(d => {
+                                  const log = priceLogs.find(l => l.productId === selectedProductId && l.date === d);
+                                  const rank = log?.coupangKeywordRanks?.[i];
+                                  return (
+                                    <td key={d} className={`p-2 text-center border-r border-slate-50 ${d === selectedDate ? 'bg-amber-50/50' : ''}`}>
+                                      {rank ? <span className="text-blue-600 font-bold text-[13px]">{rank}</span> : <span className="text-slate-200">-</span>}
+                                    </td>
+                                  )
+                                })}
+                              </tr>
                             );
                           })}
                           {(() => {
@@ -1263,7 +1308,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                       </table>
                       {(!selectedProduct?.keywords || !selectedProduct.keywords.some(k => k)) && (
                         <div className="p-10 text-center text-xs text-slate-400">
-                          위에서 키워드를 입력하시면<br/>해당 월의 순위 변동 추이가 여기에 표시됩니다.
+                          위에서 키워드를 입력하시면<br/>해당 월의 쿠팡 순위 변동 추이가 여기에 표시됩니다.
                         </div>
                       )}
                     </div>
