@@ -925,6 +925,32 @@ export default function App() {
                         </div>
                       )}
                     </div>
+                    {/* Monthly Memo Summary */}
+                    {(() => {
+                      const currentMonth = selectedDate.substring(0, 7);
+                      const logsWithMemos = priceLogs.filter(l => l.productId === selectedProductId && l.date.startsWith(currentMonth) && l.memo && l.memo.trim() !== "");
+                      
+                      if (logsWithMemos.length === 0) return null;
+                      
+                      return (
+                        <div className="mt-3 bg-amber-50/60 rounded-xl p-3 border border-amber-200/50 shadow-[inset_0_2px_10px_rgba(245,158,11,0.05)]">
+                          <div className="flex items-center gap-1.5 mb-2.5">
+                            <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                              {currentMonth}
+                            </span>
+                            <h4 className="text-xs font-bold text-slate-700">월간 특이사항 모아보기</h4>
+                          </div>
+                          <ul className="flex flex-col gap-1.5 pl-1">
+                            {logsWithMemos.sort((a, b) => a.date.localeCompare(b.date)).map(log => (
+                              <li key={`summary-${log.date}`} className="text-[11px] flex items-start gap-2 text-slate-600 bg-white/60 p-1.5 rounded-lg border border-white">
+                                <span className="font-bold text-amber-700 bg-amber-100/50 px-1.5 py-0.5 rounded shrink-0 leading-none mt-0.5">{log.date.substring(5)}</span>
+                                <span className="leading-relaxed break-words pt-0.5">{log.memo}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
