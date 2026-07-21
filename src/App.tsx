@@ -63,14 +63,16 @@ The user wants to find the exact ORGANIC ranking of ONE SPECIFIC PRODUCT they ar
 2. Target Product Name: "${queryContext}"
 
 [CRITICAL COUNTING RULES - IGNORE ADS]
-In Korean e-commerce, the first few items are usually Sponsored Ads (labeled as "광고").
-You MUST completely IGNORE any product blocks that contain the label "광고". Do not include them in your counting at all.
-Start counting Rank 1 from the FIRST organic (non-ad) product, and count downwards organically.
+In Korean e-commerce, the first few items are usually Sponsored Ads (labeled as "광고" or "파워링크" or "쇼핑검색광고").
+You MUST completely IGNORE any product blocks that contain these ad labels. Do not include them in your counting at all.
+Start counting Rank 1 from the FIRST organic (non-ad) product.
 
 [CRITICAL MATCHING INSTRUCTION]
 You must look for an item that matches BOTH the Seller Name AND is semantically the same product as the Target Product Name. 
-(Note: The product name in the search text might be longer, e.g. 'Fissler pressure cooker parts rubber packing' instead of 'Fissler rubber packing'. Use your judgment).
-DO NOT return ranks for other completely different products sold by "${myStoreName}".
+
+You must output a JSON object with two fields: "reasoning" and "ranks".
+In the "reasoning" field, you MUST list the products you see in order from top to bottom, explicitly labeling them as [AD] or [ORGANIC], and keep a running count of ONLY the [ORGANIC] products.
+Example reasoning: "1. [AD] Product A. 2. [AD] Product B. 3. [ORGANIC Rank 1] Product C. 4. [ORGANIC Rank 2] Target Product (matches ES리빙). Found it at Organic Rank 2."
 
 Return a JSON object containing the SINGLE numerical position (rank) of this specific product in the ORGANIC search results.
 If you happen to find it multiple times in organic results, return them comma-separated (e.g. "3, 12"). If not found, return "-".
@@ -80,8 +82,9 @@ Text to analyze:
 ${text}
 """
 
-Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exactly this field:
+Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exactly this structure:
 {
+  "reasoning": "your step-by-step counting logic",
   "ranks": string (e.g. "3" or "3, 12" or "-")
 }`;
 
