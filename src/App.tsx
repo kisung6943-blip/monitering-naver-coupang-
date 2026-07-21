@@ -106,7 +106,7 @@ export default function App() {
   const currentLogsForDate = products.map((prod) => {
     const log = priceLogs.find((l) => l.productId === prod.id && l.date === selectedDate);
     if (log) {
-      return { ...prod, ...log, hasLog: true };
+      return { ...prod, ...log, id: prod.id, logId: log.id, hasLog: true };
     }
     return {
       ...prod,
