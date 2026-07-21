@@ -301,8 +301,8 @@ export default function App() {
 
   // AI Parser trigger
   const handleAiParse = async () => {
-    if (!aiInputText.trim()) {
-      setAiParseError("분석할 텍스트를 입력해 주세요.");
+    if (!aiInputText.trim() && !aiInputImage) {
+      setAiParseError("분석할 텍스트나 이미지를 입력(붙여넣기)해 주세요.");
       return;
     }
 
