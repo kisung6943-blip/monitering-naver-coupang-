@@ -293,16 +293,53 @@ export default function App() {
     setAiParseError(null);
 
     try {
-      const response = await fetch("/api/parse-price", {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("API 키가 설정되지 않았습니다. .env 파일에 VITE_GEMINI_API_KEY를 추가해주세요.");
+      }
+      
+      const prompt = `You are an expert price auditor. Analyze the following raw copied text from a Korean e-commerce site (Naver Shopping or Coupang). 
+Extract the primary selling price, shipping fee, seller name, product name, and the platform.
+
+Text to analyze:
+"""
+${aiInputText}
+"""
+
+Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exactly these fields:
+{
+  "platform": "naver" | "coupang" | "unknown",
+  "price": number (the primary selling price, digits only),
+  "shipping": number (the shipping fee, digits only, 0 if free),
+  "seller": string (the seller name, if found),
+  "productName": string (the parsed product name)
+}`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: aiInputText }),
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1 }
+        })
       });
 
-      const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "AI 분석에 실패했습니다.");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || "AI 분석 서버(Google)와의 통신에 실패했습니다.");
       }
+
+      const rawData = await response.json();
+      const generatedText = rawData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      
+      let data;
+      try {
+        const cleanedText = generatedText.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+        data = JSON.parse(cleanedText);
+      } catch (parseErr) {
+        throw new Error("AI가 응답한 데이터를 분석할 수 없습니다.");
+      }
+      data.success = true;
 
       if (data.success) {
         if (data.platform === "naver") {
