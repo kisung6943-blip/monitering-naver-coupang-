@@ -31,6 +31,8 @@ export default function App() {
   const [aiParsingPlatform, setAiParsingPlatform] = useState<"naver" | "coupang">("naver");
   const [isAiParsing, setIsAiParsing] = useState<boolean>(false);
   const [aiParseError, setAiParseError] = useState<string | null>(null);
+  const [localApiKey, setLocalApiKey] = useState(() => localStorage.getItem("gemini_api_key") || "");
+  const [showApiKeyInput, setShowApiKeyInput] = useState(!import.meta.env.VITE_GEMINI_API_KEY && !localStorage.getItem("gemini_api_key"));
   
   // Manual / AI Edit form states (for selected product & selected date)
   const [editNaverPrice, setEditNaverPrice] = useState<string>("");
@@ -293,9 +295,10 @@ export default function App() {
     setAiParseError(null);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || localApiKey;
       if (!apiKey) {
-        throw new Error("API 키가 설정되지 않았습니다. .env 파일에 VITE_GEMINI_API_KEY를 추가해주세요.");
+        setShowApiKeyInput(true);
+        throw new Error("API 키가 설정되지 않았습니다. 톱니바퀴 버튼을 눌러 API 키를 직접 입력해주세요.");
       }
       
       const prompt = `You are an expert price auditor. Analyze the following raw copied text from a Korean e-commerce site (Naver Shopping or Coupang). 
@@ -1102,6 +1105,38 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                         </button>
                       </div>
                     </div>
+
+                    {showApiKeyInput && (
+                      <div className="bg-rose-50 border border-rose-200 p-2.5 rounded-lg flex flex-col gap-1.5 mt-1 mb-1">
+                        <span className="text-[11px] font-bold text-rose-700">🔑 Gemini API 키 직접 입력 (서버 재시작 불필요)</span>
+                        <input
+                          type="password"
+                          placeholder="발급받은 API 키를 여기에 바로 붙여넣어주세요..."
+                          value={localApiKey}
+                          onChange={(e) => {
+                            setLocalApiKey(e.target.value);
+                            localStorage.setItem("gemini_api_key", e.target.value);
+                            if (e.target.value.trim().length > 10) {
+                              setShowApiKeyInput(false);
+                              setAiParseError(null);
+                            }
+                          }}
+                          className="w-full text-xs p-1.5 rounded bg-white border border-rose-200 outline-none focus:border-rose-400 font-mono"
+                        />
+                        <span className="text-[10px] text-rose-500 font-medium leading-tight">입력하신 키는 브라우저 내부(localStorage)에만 안전하게 저장되며 외부나 깃허브로 유출되지 않습니다. 입력 즉시 바로 작동합니다.</span>
+                      </div>
+                    )}
+
+                    {!showApiKeyInput && (
+                      <div className="flex justify-end -mt-1 mb-1">
+                        <button 
+                          onClick={() => setShowApiKeyInput(true)}
+                          className="text-[10px] text-slate-400 hover:text-slate-600 flex items-center gap-0.5"
+                        >
+                          <span>⚙️ API 키 변경</span>
+                        </button>
+                      </div>
+                    )}
 
                     <textarea
                       placeholder="제품 상세페이지나 옵션에서 드래그하여 복사한 글을 그대로 붙여넣어 주세요..."
