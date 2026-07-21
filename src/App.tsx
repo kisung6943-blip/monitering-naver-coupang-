@@ -254,6 +254,34 @@ export default function App() {
     localStorage.setItem("price_monitor_logs", JSON.stringify(updatedLogs));
   };
 
+  const handleMemoChange = (productId: string, date: string, value: string) => {
+    const existingLogIndex = priceLogs.findIndex(
+      (log) => log.productId === productId && log.date === date
+    );
+    const updatedLogs = [...priceLogs];
+    
+    if (existingLogIndex >= 0) {
+      const log = { ...updatedLogs[existingLogIndex] };
+      log.memo = value;
+      updatedLogs[existingLogIndex] = log;
+    } else {
+      const newLog: PriceLog = {
+        id: `log-${productId}-${date}`,
+        date: date,
+        productId,
+        naverPrice: 0, naverShipping: 0, naverTotal: 0,
+        coupangSeller: "", coupangPrice: 0, coupangShipping: 0, coupangTotal: 0,
+        difference: 0,
+        keywordRanks: [],
+        memo: value
+      };
+      updatedLogs.push(newLog);
+    }
+    setPriceLogs(updatedLogs);
+    localStorage.setItem("price_monitor_logs", JSON.stringify(updatedLogs));
+  };
+
+
   // AI Parser trigger
   const handleAiParse = async () => {
     if (!aiInputText.trim()) {
@@ -858,6 +886,37 @@ export default function App() {
                               </tr>
                             );
                           })}
+                          {(() => {
+                            const year = parseInt(selectedDate.substring(0, 4));
+                            const month = parseInt(selectedDate.substring(5, 7));
+                            const daysInMonth = new Date(year, month, 0).getDate();
+                            const dates = Array.from({ length: daysInMonth }).map((_, i) => 
+                              `${selectedDate.substring(0, 7)}-${(i + 1).toString().padStart(2, '0')}`
+                            );
+                            return (
+                              <tr className="hover:bg-amber-50/50 bg-amber-50/20 border-t-2 border-slate-100">
+                                <td className="p-2.5 font-bold text-amber-800 min-w-[150px] max-w-[200px] truncate bg-amber-50/80 sticky left-0 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] z-10 flex items-center gap-1.5">
+                                  <span>📝</span> 일일 특이사항 (메모)
+                                </td>
+                                {dates.map(d => {
+                                  const log = priceLogs.find(l => l.productId === selectedProductId && l.date === d);
+                                  const memo = log?.memo || "";
+                                  return (
+                                    <td key={`memo-${d}`} className={`p-1 text-center border-r border-amber-100/30 ${d === selectedDate ? 'bg-amber-100/60' : ''}`}>
+                                      <input
+                                        type="text"
+                                        value={memo}
+                                        onChange={(e) => handleMemoChange(selectedProductId, d, e.target.value)}
+                                        placeholder="메모"
+                                        className="w-full min-w-[40px] text-[11px] px-1 py-1.5 outline-none text-amber-900 bg-transparent text-center focus:bg-white focus:ring-1 focus:ring-amber-400 rounded transition-all placeholder-amber-900/20 font-medium"
+                                        title={memo}
+                                      />
+                                    </td>
+                                  )
+                                })}
+                              </tr>
+                            );
+                          })()}
                         </tbody>
                       </table>
                       {(!selectedProduct?.keywords || !selectedProduct.keywords.some(k => k)) && (

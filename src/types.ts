@@ -19,4 +19,5 @@ export interface PriceLog {
   coupangTotal: number;
   difference: number; // naverTotal - coupangTotal
   keywordRanks?: string[];
+  memo?: string; // Optional memo for the date
 }
