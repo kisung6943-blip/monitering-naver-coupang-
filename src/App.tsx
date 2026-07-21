@@ -70,9 +70,10 @@ Start counting Rank 1 from the FIRST organic (non-ad) product.
 [CRITICAL MATCHING INSTRUCTION]
 You must look for an item that matches BOTH the Seller Name AND is semantically the same product as the Target Product Name. 
 
-You must output a JSON object with two fields: "reasoning" and "ranks".
-In the "reasoning" field, you MUST list the products you see in order from top to bottom, explicitly labeling them as [AD] or [ORGANIC], and keep a running count of ONLY the [ORGANIC] products.
-Example reasoning: "1. [AD] Product A. 2. [AD] Product B. 3. [ORGANIC Rank 1] Product C. 4. [ORGANIC Rank 2] Target Product (matches ES리빙). Found it at Organic Rank 2."
+[SPEED OPTIMIZATION - CRITICAL]
+To make your response lightning fast, your "reasoning" field MUST be extremely short. DO NOT write out product names or full sentences.
+Just write a comma-separated sequence of what you see until you hit the target, then STOP immediately.
+Example reasoning: "AD, AD, ORG1, ORG2, ORG3(Target Found!)"
 
 Return a JSON object containing the SINGLE numerical position (rank) of this specific product in the ORGANIC search results.
 If you happen to find it multiple times in organic results, return them comma-separated (e.g. "3, 12"). If not found, return "-".
@@ -84,7 +85,7 @@ ${text}
 
 Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exactly this structure:
 {
-  "reasoning": "your step-by-step counting logic",
+  "reasoning": "short sequence like 'AD, ORG1, ORG2(Target)'",
   "ranks": string (e.g. "3" or "3, 12" or "-")
 }`;
 
