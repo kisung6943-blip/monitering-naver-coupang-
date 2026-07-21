@@ -63,12 +63,14 @@ The user wants to find the exact ORGANIC ranking of ONE SPECIFIC PRODUCT they ar
 2. Target Product Name: "${queryContext}"
 
 [CRITICAL COUNTING RULES - IGNORE ADS]
-In Korean e-commerce, the first few items are usually Sponsored Ads (labeled as "광고" or "파워링크" or "쇼핑검색광고").
+In Korean e-commerce, the first few items are usually Sponsored Ads (labeled as "광고" or "스폰서" or "파워링크" or "쇼핑검색광고").
 You MUST completely IGNORE any product blocks that contain these ad labels. Do not include them in your counting at all.
 Start counting Rank 1 from the FIRST organic (non-ad) product.
 
 [CRITICAL MATCHING INSTRUCTION]
-You must look for an item that matches BOTH the Seller Name AND is semantically the same product as the Target Product Name. 
+You must look for an item that is semantically the same product as the Target Product Name. 
+If the Seller/Store Name is visible in the text block, it MUST match the Target Seller Name. 
+HOWEVER, on platforms like Coupang, the seller name might not be shown in the search results. If the seller name is completely missing, you can match based on the Target Product Name alone.
 
 [SPEED OPTIMIZATION - CRITICAL]
 To make your response lightning fast, your "reasoning" field MUST be extremely short. DO NOT write out product names or full sentences.
