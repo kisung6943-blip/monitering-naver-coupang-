@@ -43,7 +43,7 @@ async function startServer() {
 
       const ai = getGeminiClient();
       const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-1.5-flash",
         contents: `You are an expert price auditor. Analyze the following raw copied text from a Korean e-commerce site (Naver Shopping or Coupang). 
 Extract the primary selling price, shipping fee, seller name, product name, and the platform.
 
