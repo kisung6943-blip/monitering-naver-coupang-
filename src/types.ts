@@ -4,6 +4,7 @@ export interface Product {
   naverUrl?: string;
   coupangUrl?: string;
   keywords?: string[];
+  keywordVolumes?: string[];
 }
 
 export interface PriceLog {

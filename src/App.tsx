@@ -375,6 +375,19 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
     localStorage.setItem("price_monitor_products", JSON.stringify(updatedProducts));
   };
 
+  const handleKeywordVolumeChange = (productId: string, index: number, value: string) => {
+    const updatedProducts = products.map(p => {
+      if (p.id === productId) {
+        const keywordVolumes = [...(p.keywordVolumes || Array(6).fill(""))];
+        keywordVolumes[index] = value;
+        return { ...p, keywordVolumes };
+      }
+      return p;
+    });
+    setProducts(updatedProducts);
+    localStorage.setItem("price_monitor_products", JSON.stringify(updatedProducts));
+  };
+
   const handleKeywordRankChange = (productId: string, index: number, value: string) => {
     const existingLogIndex = priceLogs.findIndex(
       (log) => log.productId === productId && log.date === selectedDate
@@ -1081,7 +1094,16 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                                 placeholder="키워드 입력"
                                 value={keywordName}
                                 onChange={(e) => handleKeywordNameChange(selectedProductId, i, e.target.value)}
-                                className="w-full text-sm px-3 py-2.5 outline-none text-slate-800 font-medium bg-transparent placeholder-slate-400"
+                                className="w-full text-sm px-2 py-2.5 outline-none text-slate-800 font-medium bg-transparent placeholder-slate-400"
+                              />
+                              <div className="w-px h-6 bg-slate-200 shrink-0"></div>
+                              <input 
+                                type="text" 
+                                placeholder="검색량"
+                                value={selectedProduct?.keywordVolumes?.[i] || ""}
+                                onChange={(e) => handleKeywordVolumeChange(selectedProductId, i, e.target.value)}
+                                className="w-14 text-[11px] px-1 py-2.5 outline-none text-slate-500 font-medium text-center shrink-0 placeholder-slate-300 bg-transparent"
+                                title="월간 검색량"
                               />
                               <div className="w-px h-6 bg-slate-200 shrink-0"></div>
                               <input 
@@ -1089,7 +1111,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                                 placeholder="순위"
                                 value={keywordRank}
                                 onChange={(e) => handleKeywordRankChange(selectedProductId, i, e.target.value)}
-                                className="w-16 text-sm px-2 py-2.5 outline-none text-emerald-600 font-bold text-center shrink-0 placeholder-slate-300 bg-transparent"
+                                className="w-12 text-sm px-1 py-2.5 outline-none text-emerald-600 font-bold text-center shrink-0 placeholder-slate-300 bg-transparent"
                               />
                               <button 
                                 onClick={() => setActiveAiKeywordIndex(activeAiKeywordIndex?.index === i && activeAiKeywordIndex?.platform === 'naver' ? null : { index: i, platform: 'naver' })}
@@ -1151,7 +1173,16 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                                 placeholder="키워드 입력"
                                 value={keywordName}
                                 onChange={(e) => handleKeywordNameChange(selectedProductId, i, e.target.value)}
-                                className="w-full text-sm px-3 py-2.5 outline-none text-slate-800 font-medium bg-transparent placeholder-slate-400"
+                                className="w-full text-sm px-2 py-2.5 outline-none text-slate-800 font-medium bg-transparent placeholder-slate-400"
+                              />
+                              <div className="w-px h-6 bg-slate-200 shrink-0"></div>
+                              <input 
+                                type="text" 
+                                placeholder="검색량"
+                                value={selectedProduct?.keywordVolumes?.[i] || ""}
+                                onChange={(e) => handleKeywordVolumeChange(selectedProductId, i, e.target.value)}
+                                className="w-14 text-[11px] px-1 py-2.5 outline-none text-slate-500 font-medium text-center shrink-0 placeholder-slate-300 bg-transparent"
+                                title="월간 검색량"
                               />
                               <div className="w-px h-6 bg-slate-200 shrink-0"></div>
                               <input 
@@ -1159,7 +1190,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                                 placeholder="순위"
                                 value={keywordRankCoupang}
                                 onChange={(e) => handleCoupangKeywordRankChange(selectedProductId, i, e.target.value)}
-                                className="w-16 text-sm px-2 py-2.5 outline-none text-blue-600 font-bold text-center shrink-0 placeholder-slate-300 bg-transparent"
+                                className="w-12 text-sm px-1 py-2.5 outline-none text-blue-600 font-bold text-center shrink-0 placeholder-slate-300 bg-transparent"
                               />
                               <button 
                                 onClick={() => setActiveAiKeywordIndex(activeAiKeywordIndex?.index === i && activeAiKeywordIndex?.platform === 'coupang' ? null : { index: i, platform: 'coupang' })}
