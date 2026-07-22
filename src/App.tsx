@@ -706,10 +706,6 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
 
       {/* Header */}
       <header className="bg-slate-900 text-white shadow-md border-b border-slate-800" id="main-header">
-        {/* NEW VERSION BANNER */}
-        <div className="bg-rose-600 text-white text-center py-2 text-sm font-bold flex items-center justify-center gap-2">
-          <span>🎉 업데이트가 성공적으로 적용되었습니다! (이제 품목 이름 옆에 빨간색 삭제 버튼이 보입니다)</span>
-        </div>
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="bg-amber-500 text-slate-950 p-2.5 rounded-xl font-bold shadow-md flex items-center justify-center">
