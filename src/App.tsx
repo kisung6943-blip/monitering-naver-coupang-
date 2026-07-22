@@ -91,7 +91,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
   "ranks": string (e.g. "3" or "3, 12" or "-")
 }`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -101,7 +101,8 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
       });
 
       if (!response.ok) {
-        throw new Error("AI 서버와의 통신에 실패했습니다.");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || "AI 서버와의 통신에 실패했습니다.");
       }
 
       const rawData = await response.json();
@@ -197,6 +198,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
     const activeLog = priceLogs.find(
       (log) => log.productId === selectedProductId && log.date === selectedDate
     );
+    
     if (activeLog) {
       setEditNaverPrice(activeLog.naverPrice.toString());
       setEditNaverShipping(activeLog.naverShipping.toString());
@@ -204,11 +206,26 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
       setEditCoupangPrice(activeLog.coupangPrice === 0 ? "" : activeLog.coupangPrice.toString());
       setEditCoupangShipping(activeLog.coupangShipping === 0 ? "" : activeLog.coupangShipping.toString());
     } else {
-      setEditNaverPrice("");
-      setEditNaverShipping("");
-      setEditCoupangSeller("");
-      setEditCoupangPrice("");
-      setEditCoupangShipping("");
+      // Find the most recent past log to carry over
+      const pastLogs = priceLogs
+        .filter((log) => log.productId === selectedProductId && log.date < selectedDate)
+        .sort((a, b) => b.date.localeCompare(a.date));
+        
+      const mostRecentLog = pastLogs[0];
+      
+      if (mostRecentLog) {
+        setEditNaverPrice(mostRecentLog.naverPrice.toString());
+        setEditNaverShipping(mostRecentLog.naverShipping.toString());
+        setEditCoupangSeller(mostRecentLog.coupangSeller || "");
+        setEditCoupangPrice(mostRecentLog.coupangPrice === 0 ? "" : mostRecentLog.coupangPrice.toString());
+        setEditCoupangShipping(mostRecentLog.coupangShipping === 0 ? "" : mostRecentLog.coupangShipping.toString());
+      } else {
+        setEditNaverPrice("");
+        setEditNaverShipping("");
+        setEditCoupangSeller("");
+        setEditCoupangPrice("");
+        setEditCoupangShipping("");
+      }
     }
     setAiInputText("");
     setAiParseError(null);
@@ -218,11 +235,32 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
   const currentLogsForDate = products.map((prod) => {
     const log = priceLogs.find((l) => l.productId === prod.id && l.date === selectedDate);
     if (log) {
-      return { ...prod, ...log, id: prod.id, logId: log.id, hasLog: true };
+      return { ...prod, ...log, id: prod.id, logId: log.id, hasLog: true, isCopied: false };
     }
+    
+    // Find the most recent log before selectedDate
+    const pastLogs = priceLogs
+      .filter((l) => l.productId === prod.id && l.date < selectedDate)
+      .sort((a, b) => b.date.localeCompare(a.date));
+      
+    const mostRecentLog = pastLogs[0];
+    
+    if (mostRecentLog) {
+      return { 
+        ...prod, 
+        ...mostRecentLog, 
+        id: prod.id, 
+        logId: null, // no actual log exists for this date yet
+        hasLog: true, 
+        isCopied: true, // flag to indicate this is carried over
+        date: selectedDate // override date for UI purposes
+      };
+    }
+
     return {
       ...prod,
       hasLog: false,
+      isCopied: false,
       naverPrice: 0,
       naverShipping: 0,
       naverTotal: 0,
@@ -232,6 +270,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
       coupangTotal: 0,
       difference: 0,
       keywordRanks: [],
+      coupangKeywordRanks: [],
     };
   });
 
@@ -478,7 +517,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
         });
       }
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -667,6 +706,10 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
 
       {/* Header */}
       <header className="bg-slate-900 text-white shadow-md border-b border-slate-800" id="main-header">
+        {/* NEW VERSION BANNER */}
+        <div className="bg-rose-600 text-white text-center py-2 text-sm font-bold flex items-center justify-center gap-2">
+          <span>🎉 업데이트가 성공적으로 적용되었습니다! (이제 품목 이름 옆에 빨간색 삭제 버튼이 보입니다)</span>
+        </div>
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="bg-amber-500 text-slate-950 p-2.5 rounded-xl font-bold shadow-md flex items-center justify-center">
@@ -882,7 +925,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                             {/* Name */}
                             <td className="py-3 px-3">
                               <div className="font-medium text-slate-900 line-clamp-1">{item.name}</div>
-                              <div className="flex gap-2 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex gap-2 mt-0.5 transition-opacity items-center">
                                 {item.naverUrl && (
                                   <a 
                                     href={item.naverUrl} 
@@ -905,6 +948,16 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                                     쿠팡 바로가기 <ExternalLink size={8} />
                                   </a>
                                 )}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteProduct(item.id);
+                                  }}
+                                  className="text-[10px] text-rose-500 hover:text-rose-700 flex items-center gap-0.5 ml-auto mr-2 font-semibold"
+                                  title="이 품목 삭제하기"
+                                >
+                                  <Trash2 size={10} /> 삭제
+                                </button>
                               </div>
                             </td>
 

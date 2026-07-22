@@ -43,7 +43,7 @@ async function startServer() {
 
       const ai = getGeminiClient();
       const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-3.5-flash",
         contents: `You are an expert price auditor. Analyze the following raw copied text from a Korean e-commerce site (Naver Shopping or Coupang). 
 Extract the primary selling price, shipping fee, seller name, product name, and the platform.
 
@@ -99,9 +99,17 @@ ${text}
     }
   });
 
-  // Serve static assets in production, or mount Vite middleware in development
   if (process.env.NODE_ENV !== "production") {
     console.log("Starting server in DEVELOPMENT mode with Vite Middleware...");
+    
+    // Add aggressive cache busting headers
+    app.use((req, res, next) => {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      next();
+    });
+
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
