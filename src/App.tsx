@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { Product, PriceLog } from "./types";
 import { INITIAL_PRODUCTS, generateHistoricalLogs } from "./data";
+import { supabase } from "./supabase";
 
 export default function App() {
   // State for products and price logs
@@ -161,30 +162,64 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
   // Toast notifications
   const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
-  // Initialize data from LocalStorage or seed data
+  // Initialize data from Supabase, fallback to LocalStorage or seed data
   useEffect(() => {
-    const storedProducts = localStorage.getItem("price_monitor_products");
-    const storedLogs = localStorage.getItem("price_monitor_logs");
+    const initData = async () => {
+      try {
+        const { data: prodData, error: prodErr } = await supabase.from("products").select("*");
+        const { data: logData, error: logErr } = await supabase.from("price_logs").select("*");
+        
+        if (!prodErr && prodData && prodData.length > 0) {
+          setProducts(prodData);
+          setPriceLogs(logData || []);
+          return;
+        }
+      } catch (err) {
+        console.error("Supabase load error:", err);
+      }
 
-    if (storedProducts && storedLogs) {
-      setProducts(JSON.parse(storedProducts));
-      setPriceLogs(JSON.parse(storedLogs));
-    } else {
-      // Seed initial data
-      setProducts(INITIAL_PRODUCTS);
-      const initialLogs = generateHistoricalLogs();
-      setPriceLogs(initialLogs);
-      localStorage.setItem("price_monitor_products", JSON.stringify(INITIAL_PRODUCTS));
-      localStorage.setItem("price_monitor_logs", JSON.stringify(initialLogs));
-    }
+      // Fallback
+      const storedProducts = localStorage.getItem("price_monitor_products");
+      const storedLogs = localStorage.getItem("price_monitor_logs");
+
+      if (storedProducts && storedLogs) {
+        const parsedProducts = JSON.parse(storedProducts);
+        const parsedLogs = JSON.parse(storedLogs);
+        setProducts(parsedProducts);
+        setPriceLogs(parsedLogs);
+        
+        // Sync local to DB
+        supabase.from("products").upsert(parsedProducts).then();
+        supabase.from("price_logs").upsert(parsedLogs).then();
+      } else {
+        // Seed initial data
+        setProducts(INITIAL_PRODUCTS);
+        const initialLogs = generateHistoricalLogs();
+        setPriceLogs(initialLogs);
+        localStorage.setItem("price_monitor_products", JSON.stringify(INITIAL_PRODUCTS));
+        localStorage.setItem("price_monitor_logs", JSON.stringify(initialLogs));
+        
+        supabase.from("products").upsert(INITIAL_PRODUCTS).then();
+        supabase.from("price_logs").upsert(initialLogs).then();
+      }
+    };
+    
+    initData();
   }, []);
 
-  // Sync state changes with localStorage
-  const saveToLocalStorage = (updatedProducts: Product[], updatedLogs: PriceLog[]) => {
+  // Sync state changes with localStorage and Supabase
+  const saveToLocalStorage = async (updatedProducts: Product[], updatedLogs: PriceLog[]) => {
     setProducts(updatedProducts);
     setPriceLogs(updatedLogs);
     localStorage.setItem("price_monitor_products", JSON.stringify(updatedProducts));
     localStorage.setItem("price_monitor_logs", JSON.stringify(updatedLogs));
+    
+    try {
+      if (updatedProducts.length > 0) await supabase.from("products").upsert(updatedProducts);
+      if (updatedLogs.length > 0) await supabase.from("price_logs").upsert(updatedLogs);
+    } catch (e) {
+      console.error("Supabase sync error:", e);
+    }
   };
 
   // Toast Helper
@@ -371,8 +406,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
       }
       return p;
     });
-    setProducts(updatedProducts);
-    localStorage.setItem("price_monitor_products", JSON.stringify(updatedProducts));
+    saveToLocalStorage(updatedProducts, priceLogs);
   };
 
   const handleKeywordVolumeChange = (productId: string, index: number, value: string) => {
@@ -384,8 +418,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
       }
       return p;
     });
-    setProducts(updatedProducts);
-    localStorage.setItem("price_monitor_products", JSON.stringify(updatedProducts));
+    saveToLocalStorage(updatedProducts, priceLogs);
   };
 
   const handleKeywordRankChange = (productId: string, index: number, value: string) => {
@@ -414,8 +447,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
       };
       updatedLogs.push(newLog);
     }
-    setPriceLogs(updatedLogs);
-    localStorage.setItem("price_monitor_logs", JSON.stringify(updatedLogs));
+    saveToLocalStorage(products, updatedLogs);
   };
 
   const handleCoupangKeywordRankChange = (productId: string, index: number, value: string) => {
@@ -445,8 +477,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
       };
       updatedLogs.push(newLog);
     }
-    setPriceLogs(updatedLogs);
-    localStorage.setItem("price_monitor_logs", JSON.stringify(updatedLogs));
+    saveToLocalStorage(products, updatedLogs);
   };
 
   const handleMemoChange = (productId: string, date: string, value: string) => {
@@ -472,8 +503,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
       };
       updatedLogs.push(newLog);
     }
-    setPriceLogs(updatedLogs);
-    localStorage.setItem("price_monitor_logs", JSON.stringify(updatedLogs));
+    saveToLocalStorage(products, updatedLogs);
   };
 
 
