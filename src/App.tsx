@@ -18,6 +18,7 @@ export default function App() {
   // State for products and price logs
   const [products, setProducts] = useState<Product[]>([]);
   const [priceLogs, setPriceLogs] = useState<PriceLog[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
   // UI filter states
   const [selectedDate, setSelectedDate] = useState<string>("2026-07-10");
@@ -172,6 +173,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
         if (!prodErr && prodData && prodData.length > 0) {
           setProducts(prodData);
           setPriceLogs(logData || []);
+          setIsLoading(false);
           return;
         }
       } catch (err) {
@@ -202,6 +204,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
         supabase.from("products").upsert(INITIAL_PRODUCTS).then();
         supabase.from("price_logs").upsert(initialLogs).then();
       }
+      setIsLoading(false);
     };
     
     initData();
@@ -932,7 +935,16 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredLogs.length === 0 ? (
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={10} className="text-center py-20">
+                        <div className="flex flex-col items-center justify-center">
+                          <RefreshCw size={28} className="text-slate-300 animate-spin mb-3" />
+                          <p className="text-slate-500 font-medium">데이터를 불러오는 중입니다...</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredLogs.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="text-center py-10 text-slate-400">
                         <Info size={24} className="mx-auto mb-2 text-slate-300" />
