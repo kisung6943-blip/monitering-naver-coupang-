@@ -1080,7 +1080,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                       <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> {selectedDate} 네이버 키워드 순위 입력</span>
                       <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold">✓ 자동 저장됨</span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {Array.from({ length: 6 }).map((_, i) => {
                         const keywordName = selectedProduct?.keywords?.[i] || "";
                         const activeLog = priceLogs.find(l => l.productId === selectedProductId && l.date === selectedDate);
@@ -1159,7 +1159,7 @@ Return ONLY a valid JSON string (no markdown formatting, no \`\`\`json) with exa
                       <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> {selectedDate} 쿠팡 키워드 순위 입력</span>
                       <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold">✓ 자동 저장됨</span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {Array.from({ length: 6 }).map((_, i) => {
                         const keywordName = selectedProduct?.keywords?.[i] || "";
                         const activeLog = priceLogs.find(l => l.productId === selectedProductId && l.date === selectedDate);
